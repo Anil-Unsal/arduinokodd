@@ -1,0 +1,74 @@
+#include <SoftwareSerial.h>
+
+// --- Bluetooth ---
+SoftwareSerial BT(2, 3);  // RX, TX
+
+// --- L298N motor sürücü pinleri ---
+const int ENA = 5;   // Sol motor PWM
+const int IN1 = 8;
+const int IN2 = 9;
+
+const int ENB = 6;   // Sağ motor PWM
+const int IN3 = 10;
+const int IN4 = 11;
+
+int speedVal = 200; // Hız değeri (0-255)
+
+void setup() {
+  pinMode(ENA, OUTPUT); pinMode(IN1, OUTPUT); pinMode(IN2, OUTPUT);
+  pinMode(ENB, OUTPUT); pinMode(IN3, OUTPUT); pinMode(IN4, OUTPUT);
+
+  Serial.begin(9600);
+  BT.begin(9600);
+
+  Serial.println("Bluetooth araba hazır!");
+}
+
+void forward(int spd) {
+  digitalWrite(IN1, HIGH); digitalWrite(IN2, LOW);
+  digitalWrite(IN3, HIGH); digitalWrite(IN4, LOW);
+  analogWrite(ENA, spd); analogWrite(ENB, spd);
+}
+
+void backward(int spd) {
+  digitalWrite(IN1, LOW); digitalWrite(IN2, HIGH);
+  digitalWrite(IN3, LOW); digitalWrite(IN4, HIGH);
+  analogWrite(ENA, spd); analogWrite(ENB, spd);
+}
+
+void left(int spd) {
+  digitalWrite(IN1, LOW); digitalWrite(IN2, LOW); // Sol motor durur
+  digitalWrite(IN3, HIGH); digitalWrite(IN4, LOW); // Sağ motor ileri
+  analogWrite(ENA, 0); analogWrite(ENB, spd);
+}
+
+void right(int spd) {
+  digitalWrite(IN1, HIGH); digitalWrite(IN2, LOW); // Sol motor ileri
+  digitalWrite(IN3, LOW); digitalWrite(IN4, LOW); // Sağ motor durur
+  analogWrite(ENA, spd); analogWrite(ENB, 0);
+}
+
+void stopMotors() {
+  digitalWrite(IN1, LOW); digitalWrite(IN2, LOW);
+  digitalWrite(IN3, LOW); digitalWrite(IN4, LOW);
+  analogWrite(ENA, 0); analogWrite(ENB, 0);
+}
+
+void loop() {
+  while (BT.available()) {
+    char c = BT.read();
+    
+    // Sadece geçerli komutları kabul et
+    if (c == 'F' || c == 'B' || c == 'L' || c == 'R' || c == 'S') {
+      Serial.print("Gelen komut: "); Serial.println(c);
+
+      switch (c) {
+        case 'F': forward(speedVal); break;
+        case 'B': backward(speedVal); break;
+        case 'L': left(speedVal); break;
+        case 'R': right(speedVal); break;
+        case 'S': stopMotors(); break;
+      }
+    }
+  }
+}
