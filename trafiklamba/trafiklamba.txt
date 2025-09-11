@@ -1,0 +1,24 @@
+int kirmiziled = 13; // kırmızı ledi Arduino uno da 4 nolu pinimize atadık
+int sariled = 12; // sarı ledi Arduino uno da 5 nolu pinimize atadık
+int yesilled = 11; // yeşil ledi Arduino uno da 6 nolu pinimize atadık
+void setup() {
+ 
+pinMode(kirmiziled, OUTPUT); // 4 nolu pini çıkış olarak ayarlarız.
+pinMode(sariled, OUTPUT); // 5 nolu pini çıkış olarak ayarlarız.
+pinMode(yesilled, OUTPUT); // 6 nolu pini çıkış olarak ayarlarız.
+ 
+}
+ 
+void loop() {
+ 
+digitalWrite(kirmiziled, HIGH); // kırmızı ledimizi yaktık.
+delay(5000); // 5 saniye kırmızı ledimiz yanar (buradaki 1000 degeri milisaniye cinsindendir. 1000milisaniye=1saniye).
+digitalWrite(kirmiziled, LOW); // kırmızı ledimizi söndürdük.
+digitalWrite(sariled, HIGH); // sarı ledimizi yaktık.
+delay(3000); // 3 saniye sarı led yanar.
+digitalWrite(sariled, LOW); // sarı ledimizi söndürdük.
+digitalWrite(yesilled, HIGH); // yeşil ledimizi yaktık.
+delay(3000); // 3 saniye yesil led yanar.
+digitalWrite(yesilled, LOW); // yeşil ledimizi söndürdük.
+ 
+}
