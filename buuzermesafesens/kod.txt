@@ -1,0 +1,74 @@
+const int trigPin = 9;
+const int echoPin = 10;
+const int ledPin = 13;
+const int buzzerPin = 8;
+
+const int threshold = 30;       // 30 cm eşik
+const unsigned long alertTime = 5000;  // 5 saniye (ms)
+const unsigned long blinkInterval = 300; // LED yanıp sönme süresi
+const unsigned long beepInterval = 300;  // Buzzer dıt dıt aralığı
+
+unsigned long startMillis = 0;
+bool alertActive = false;
+
+void setup() {
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+  pinMode(ledPin, OUTPUT);
+  pinMode(buzzerPin, OUTPUT);
+  digitalWrite(ledPin, LOW);
+  digitalWrite(buzzerPin, LOW);
+  Serial.begin(9600);
+}
+
+long getDistance() {
+  // TRIG pini için tetik sinyali
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  // ECHO süresini ölç
+  long duration = pulseIn(echoPin, HIGH);
+  long distance = duration / 58; // cm hesapla
+  return distance;
+}
+
+void loop() {
+  unsigned long currentMillis = millis();
+
+  if (!alertActive) {
+    long distance = getDistance();
+    Serial.print("Mesafe: ");
+    Serial.print(distance);
+    Serial.println(" cm");
+
+    if (distance > 0 && distance < threshold) {
+      alertActive = true;
+      startMillis = currentMillis;
+    }
+  } 
+  else {
+    // LED blink
+    if ((currentMillis / blinkInterval) % 2 == 0) {
+      digitalWrite(ledPin, HIGH);
+    } else {
+      digitalWrite(ledPin, LOW);
+    }
+
+    // Buzzer beep
+    if ((currentMillis / beepInterval) % 2 == 0) {
+      digitalWrite(buzzerPin, HIGH);
+    } else {
+      digitalWrite(buzzerPin, LOW);
+    }
+
+    // 5 saniye geçtiyse alarmı durdur
+    if (currentMillis - startMillis >= alertTime) {
+      alertActive = false;
+      digitalWrite(ledPin, LOW);
+      digitalWrite(buzzerPin, LOW);
+    }
+  }
+}
