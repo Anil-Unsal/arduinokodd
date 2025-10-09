@@ -1,0 +1,26 @@
+const int potPin = A0;
+const int led1 = 9;
+const int led2 = 10;
+const int led3 = 11;
+
+void setup() {
+  pinMode(led1, OUTPUT);
+  pinMode(led2, OUTPUT);
+  pinMode(led3, OUTPUT);
+  Serial.begin(9600);
+}
+
+void loop() {
+  int value = analogRead(potPin);   // 0 - 1023
+  Serial.println(value);
+
+  // 0-1023 aralığını 0-255 aralığına dönüştür
+  int pwmValue = map(value, 0, 1023, 0, 255);
+
+  // LED'lere uygula
+  analogWrite(led1, pwmValue);
+  analogWrite(led2, pwmValue);
+  analogWrite(led3, pwmValue);
+
+  delay(10);
+}
