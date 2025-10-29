@@ -1,0 +1,104 @@
+#include <Servo.h>
+
+const int trigPin = 9;
+const int echoPin = 10;
+const int servoPin = 6;
+
+const unsigned long CLOSE_DELAY_MS = 2000; // Obje gittikten sonra kaç ms sonra kapansın
+const int DIST_THRESHOLD_CM = 40; // algılama mesafesi (cm)
+const int NUM_SAMPLES = 5; // mesafe ölçümlerinin ortalaması için
+
+const int openAngle = 90;   // kapı açık konumu (derece)
+const int closedAngle = 0;  // kapı kapalı konumu (derece)
+
+Servo doorServo;
+
+bool doorOpen = false;
+unsigned long objectLostAt = 0; // obje kaybolduğunda zaman
+bool objectPreviouslySeen = false;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+  doorServo.attach(servoPin);
+  // Başlangıçta kapalı pozisyon
+  doorServo.write(closedAngle);
+  delay(500);
+}
+
+long measureDistance() {
+  // HC-SR04 ile mesafe ölçme (cm)
+  long sum = 0;
+  for (int i = 0; i < NUM_SAMPLES; i++) {
+    digitalWrite(trigPin, LOW);
+    delayMicroseconds(2);
+    digitalWrite(trigPin, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(trigPin, LOW);
+    unsigned long duration = pulseIn(echoPin, HIGH, 30000UL); // timeout 30ms
+    if (duration == 0) {
+      // timeout - geri dönen 0 ise sensör objeyi göremedi / çok uzak
+      // büyük bir değer dön
+      sum += 1000;
+    } else {
+      long distanceCm = duration / 29 / 2;
+      sum += distanceCm;
+    }
+    delay(5);
+  }
+  long avg = sum / NUM_SAMPLES;
+  return avg;
+}
+
+void openDoor() {
+  if (!doorOpen) {
+    doorServo.write(openAngle);
+    doorOpen = true;
+    Serial.println("Kapı açıldı");
+  }
+}
+
+void closeDoor() {
+  if (doorOpen) {
+    doorServo.write(closedAngle);
+    doorOpen = false;
+    Serial.println("Kapı kapandı");
+  }
+}
+
+void loop() {
+  long dist = measureDistance();
+  // Eğer sensör timeout verdi ve avg çok büyükse obje yok kabul et
+  bool objectDetected = (dist > 0 && dist <= DIST_THRESHOLD_CM);
+
+  Serial.print("Mesafe (cm): ");
+  Serial.println(dist);
+
+  if (objectDetected) {
+    // obje algılandı -> kapı açık olmalı (hemen aç)
+    openDoor();
+    objectPreviouslySeen = true;
+    objectLostAt = 0; // sıfırla
+  } else {
+    // obje görülmüyor
+    if (objectPreviouslySeen) {
+      // obje daha önce vardı ama şimdi yok, timer başlat
+      if (objectLostAt == 0) {
+        objectLostAt = millis();
+        Serial.println("Obje kayboldu, kapanma sayacı başladı");
+      } else {
+        // süre doldu mu?
+        if (millis() - objectLostAt >= CLOSE_DELAY_MS) {
+          closeDoor();
+          objectPreviouslySeen = false; // reset state
+          objectLostAt = 0;
+        } // else beklemeye devam
+      }
+    } else {
+      // Daha önceden obje yoktu da yok -> hiçbirşey yapma
+    }
+  }
+
+  delay(80); // kısa bekleme, loop yoğunluğunu azaltır
+}
