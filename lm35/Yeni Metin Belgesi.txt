@@ -1,0 +1,72 @@
+// LM35 - RGB LED - Buzzer örneği (common-cathode RGB)
+// Arduino Uno pinleri kullandım
+
+const int pinLM35 = A0;
+const int pinR = 9;    // PWM
+const int pinG = 10;   // PWM
+const int pinB = 11;   // PWM
+const int pinBuzzer = 8;
+
+const float vRef = 5.0;     // Arduino referans voltajı
+const int analogMax = 1023;
+
+// Sıcaklık aralığı (ölçekte kullanacağımız)
+const float minTemp = 15.0; // harici olarak değiştirilebilir
+const float maxTemp = 45.0;
+
+void setup() {
+  pinMode(pinR, OUTPUT);
+  pinMode(pinG, OUTPUT);
+  pinMode(pinB, OUTPUT);
+  pinMode(pinBuzzer, OUTPUT);
+  Serial.begin(9600);
+}
+
+void loop() {
+  int raw = analogRead(pinLM35);
+  float voltage = raw * (vRef / analogMax);     // voltaj
+  float tempC = voltage * 100.0;                 // LM35: 10 mV / °C -> 0.01 V/°C => /0.01 = *100
+
+  // Sıcaklığı sınırla
+  if (tempC < minTemp) tempC = minTemp;
+  if (tempC > maxTemp) tempC = maxTemp;
+
+  // LED parlaklıklarını hesapla (0-255)
+  // Kırmızı artan, yeşil düşen, mavi düşük tutacağız.
+  int red = map((int)(tempC * 10), (int)(minTemp*10), (int)(maxTemp*10), 0, 255);
+  int green = 255 - red;
+  int blue = map((int)(tempC * 10), (int)(minTemp*10), (int)(maxTemp*10), 50, 0); // mavi çok az
+
+  red = constrain(red, 0, 255);
+  green = constrain(green, 0, 255);
+  blue = constrain(blue, 0, 255);
+
+  analogWrite(pinR, red);
+  analogWrite(pinG, green);
+  analogWrite(pinB, blue);
+
+  // Buzzer: sıcaklık arttıkça aralığı azalt (daha sık bip)
+  // interval ms: maxInterval (soğuk) -> minInterval (sıcak)
+  int maxInterval = 1000; // ms (soğukta)
+  int minInterval = 100;  // ms (sıcakta)
+
+  int interval = map((int)(tempC*10), (int)(minTemp*10), (int)(maxTemp*10), maxInterval, minInterval);
+  interval = constrain(interval, minInterval, maxInterval);
+
+  // Bir bip üret (aktif buzzer)
+  digitalWrite(pinBuzzer, HIGH);
+  delay(80);                 // bip süresi (kısa)
+  digitalWrite(pinBuzzer, LOW);
+
+  // Bekle - sıcaklık arttıkça bu bekleme küçülecek -> daha sık bip
+  delay(interval);
+
+  // Telemetri (isteğe bağlı, çocuklara göstermek için seri monitöre yaz)
+  Serial.print("Raw: "); Serial.print(raw);
+  Serial.print("  TempC: "); Serial.print(tempC);
+  Serial.print("C  R: "); Serial.print(red);
+  Serial.print(" G: "); Serial.print(green);
+  Serial.print(" B: "); Serial.print(blue);
+  Serial.print("  Interval: "); Serial.print(interval);
+  Serial.println(" ms");
+}
