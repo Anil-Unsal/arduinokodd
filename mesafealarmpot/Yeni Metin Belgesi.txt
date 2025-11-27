@@ -1,0 +1,96 @@
+// Adjustable Distance Alarm + RGB Indicator
+
+#define TRIG 9
+#define ECHO 10
+
+#define RED 3
+#define GREEN 5
+#define BLUE 6
+
+#define BUZZER 8
+
+#define POT_THRESH A0  // threshold pot
+#define POT_CTRL  A1   // brightness / frequency pot
+
+long sure;
+int mesafe;
+
+void setup() {
+  pinMode(TRIG, OUTPUT);
+  pinMode(ECHO, INPUT);
+
+  pinMode(RED, OUTPUT);
+  pinMode(GREEN, OUTPUT);
+  pinMode(BLUE, OUTPUT);
+
+  pinMode(BUZZER, OUTPUT);
+
+  Serial.begin(9600);
+}
+
+int olcMesafeCM() {
+  digitalWrite(TRIG, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG, LOW);
+
+  sure = pulseIn(ECHO, HIGH, 30000); // timeout 30ms
+  if (sure == 0) return 500; // no reading
+  int cm = sure * 0.034 / 2;
+  return cm;
+}
+
+// 0-255 arasi renk hesaplama: green -> yellow -> red
+void renkHesaplaVeYaz(int cm, int maxBright) {
+  int clamped = constrain(cm, 0, 100);
+  int nearVal = 100 - clamped;
+
+  int r = 0, g = 0, b = 0;
+
+  if (nearVal < 50) {
+    float t = (float)nearVal / 50.0;
+    g = (int)(maxBright * (0.5 + 0.5 * t));
+    r = (int)(maxBright * (0.0 + 0.5 * t));
+  } else {
+    float t = (float)(nearVal - 50) / 50.0;
+    r = (int)(maxBright * (0.5 + 0.5 * t));
+    g = (int)(maxBright * (0.5 - 0.5 * t));
+  }
+
+  b = 0;
+
+  analogWrite(RED, r);
+  analogWrite(GREEN, g);
+  analogWrite(BLUE, b);
+}
+
+void loop() {
+  mesafe = olcMesafeCM();
+
+  int potThresh = analogRead(POT_THRESH); 
+  int potCtrl = analogRead(POT_CTRL);
+
+  int esik = map(potThresh, 0, 1023, 5, 80);
+
+  int maxBright = map(potCtrl, 0, 1023, 50, 255);
+
+  renkHesaplaVeYaz(mesafe, maxBright);
+
+  if (mesafe <= esik) {
+    int toneFreq = map(potCtrl, 0, 1023, 600, 2000);
+    tone(BUZZER, toneFreq);
+    delay(200);
+  } else {
+    noTone(BUZZER);
+  }
+
+  Serial.print("Mesafe(cm): ");
+  Serial.print(mesafe);
+  Serial.print("  Esik: ");
+  Serial.print(esik);
+  Serial.print("  MaxBright: ");
+  Serial.println(maxBright);
+
+  delay(80);
+}
