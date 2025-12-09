@@ -1,0 +1,11 @@
+| Parça      | Arduino Pin  |
+| ---------- | ------------ |
+| Sensör VCC | 5V           |
+| Sensör GND | GND          |
+| Sensör OUT | A0           |
+| LED1 (+)   | D2           |
+| LED1 (–)   | Direnç → GND |
+| LED2 (+)   | D3           |
+| LED2 (–)   | Direnç → GND |
+| LED3 (+)   | D4           |
+| LED3 (–)   | Direnç → GND |

@@ -1,0 +1,38 @@
+int sensorPin = A0;
+
+int led1 = 2; // düşük seviye
+int led2 = 3; // orta seviye
+int led3 = 4; // yüksek seviye
+
+void setup() {
+  pinMode(led1, OUTPUT);
+  pinMode(led2, OUTPUT);
+  pinMode(led3, OUTPUT);
+  Serial.begin(9600);
+}
+
+void loop() {
+  int sensorValue = analogRead(sensorPin);
+  int percent = map(sensorValue, 0, 1023, 0, 100);
+
+  Serial.println(percent);
+
+  // LED Durumları
+  if (percent < 33) {
+    digitalWrite(led1, HIGH);
+    digitalWrite(led2, LOW);
+    digitalWrite(led3, LOW);
+  } 
+  else if (percent < 66) {
+    digitalWrite(led1, HIGH);
+    digitalWrite(led2, HIGH);
+    digitalWrite(led3, LOW);
+  }
+  else {
+    digitalWrite(led1, HIGH);
+    digitalWrite(led2, HIGH);
+    digitalWrite(led3, HIGH);
+  }
+
+  delay(300);
+}
