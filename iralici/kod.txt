@@ -1,0 +1,73 @@
+#include <IRremote.h>
+
+#define IR_PIN 11
+
+#define LED1 2
+#define LED2 3
+#define LED3 4
+
+#define CMD_1 0x45
+#define CMD_2 0x46
+#define CMD_3 0x47
+
+bool led1 = false;
+bool led2 = false;
+bool led3 = false;
+
+// 🔒 zaman kilidi
+unsigned long sonZaman = 0;
+const unsigned long kilitSuresi = 350; // ms
+byte sonKomut = 0;
+
+void setup() {
+  Serial.begin(9600);
+
+  pinMode(LED1, OUTPUT);
+  pinMode(LED2, OUTPUT);
+  pinMode(LED3, OUTPUT);
+
+  IrReceiver.begin(IR_PIN);
+  Serial.println("IR Hazır");
+}
+
+void loop() {
+  if (IrReceiver.decode()) {
+
+    byte cmd = IrReceiver.decodedIRData.command;
+    unsigned long simdi = millis();
+
+    // ❌ 0x00 ve repeat paketlerini yok say
+    if (cmd == 0x00 || (IrReceiver.decodedIRData.flags & IRDATA_FLAGS_IS_REPEAT)) {
+      IrReceiver.resume();
+      return;
+    }
+
+    // 🔒 aynı komut kısa sürede geldiyse yok say
+    if (cmd == sonKomut && (simdi - sonZaman) < kilitSuresi) {
+      IrReceiver.resume();
+      return;
+    }
+
+    // kabul edilen komut
+    sonKomut = cmd;
+    sonZaman = simdi;
+
+    Serial.print("Kabul Edilen Command: 0x");
+    Serial.println(cmd, HEX);
+
+    if (cmd == CMD_1) {
+      led1 = !led1;
+      digitalWrite(LED1, led1);
+    }
+    else if (cmd == CMD_2) {
+      led2 = !led2;
+      digitalWrite(LED2, led2);
+    }
+    else if (cmd == CMD_3) {
+      led3 = !led3;
+      digitalWrite(LED3, led3);
+    }
+
+    IrReceiver.resume();
+  }
+}
