@@ -1,0 +1,71 @@
+int trigPin = 9;
+int echoPin = 10;
+
+int red = 3;
+int green = 5;
+int blue = 6;
+
+int buzzer = 8;
+int pot = A0;
+
+void setup() {
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+
+  pinMode(red, OUTPUT);
+  pinMode(green, OUTPUT);
+  pinMode(blue, OUTPUT);
+
+  pinMode(buzzer, OUTPUT);
+
+  Serial.begin(9600);
+}
+
+void loop() {
+
+  // MESAFE ÖLÇ
+  long sure;
+  int mesafe;
+
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  sure = pulseIn(echoPin, HIGH);
+  mesafe = sure * 0.034 / 2;
+
+  // POT OKU (hassasiyet)
+  int potDeger = analogRead(pot);
+  int esik = map(potDeger, 0, 1023, 5, 50);
+
+  Serial.println(mesafe);
+
+  if (mesafe < esik) {
+    // 🔴 YAKIN → ALARM
+    analogWrite(red, 255);
+    analogWrite(green, 0);
+    analogWrite(blue, 0);
+
+    digitalWrite(buzzer, HIGH);
+  }
+  else if (mesafe < esik + 20) {
+    // 🟢 ORTA
+    analogWrite(red, 0);
+    analogWrite(green, 255);
+    analogWrite(blue, 0);
+
+    digitalWrite(buzzer, LOW);
+  }
+  else {
+    // 🔵 UZAK
+    analogWrite(red, 0);
+    analogWrite(green, 0);
+    analogWrite(blue, 255);
+
+    digitalWrite(buzzer, LOW);
+  }
+
+}
